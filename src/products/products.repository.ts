@@ -19,4 +19,8 @@ export class ProductsRepository implements IProductsRepository {
       total: this.products.length,
     };
   }
+
+  async findByToken(productToken: string): Promise<Product | null> {
+    return this.products.find((p) => p.productToken === productToken) ?? null;
+  }
 }

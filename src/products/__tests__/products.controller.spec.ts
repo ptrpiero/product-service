@@ -9,6 +9,7 @@ const mockProducts: Product[] = [
 
 const mockService = {
   findAll: jest.fn().mockResolvedValue({ data: mockProducts, total: 1 }),
+  findOne: jest.fn(),
 };
 
 describe('ProductsController', () => {
@@ -32,5 +33,14 @@ describe('ProductsController', () => {
   it('passes page and limit through to the service', async () => {
     await controller.findAll(3, 5);
     expect(mockService.findAll).toHaveBeenCalledWith(3, 5);
+  });
+
+  describe('findOne', () => {
+    it('returns the product for a given uuid', async () => {
+      (mockService.findOne as jest.Mock).mockResolvedValueOnce(mockProducts[0]);
+      const result = await controller.findOne('tok-001');
+      expect(mockService.findOne).toHaveBeenCalledWith('tok-001');
+      expect(result).toEqual(mockProducts[0]);
+    });
   });
 });

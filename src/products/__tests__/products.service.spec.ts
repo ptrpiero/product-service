@@ -10,6 +10,7 @@ const mockProducts: Product[] = [
 
 const mockRepo: IProductsRepository = {
   findAll: jest.fn().mockResolvedValue({ data: mockProducts, total: 2 }),
+  findByToken: jest.fn(),
 };
 
 describe('ProductsService', () => {
@@ -35,5 +36,19 @@ describe('ProductsService', () => {
   it('forwards page and limit to repo', async () => {
     await service.findAll(2, 5);
     expect(mockRepo.findAll).toHaveBeenCalledWith(2, 5);
+  });
+
+  describe('findOne', () => {
+    it('returns the product when found', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(mockProducts[0]);
+      const result = await service.findOne('tok-001');
+      expect(mockRepo.findByToken).toHaveBeenCalledWith('tok-001');
+      expect(result).toEqual(mockProducts[0]);
+    });
+
+    it('throws NotFoundException when product is not found', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(null);
+      await expect(service.findOne('unknown')).rejects.toThrow("Product 'unknown' not found");
+    });
   });
 });
