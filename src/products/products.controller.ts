@@ -16,9 +16,9 @@ export class ProductsController {
     return this.service.findAll(page, limit);
   }
 
-  @Get(':uuid')
-  findOne(@Param('uuid') uuid: string) {
-    return this.service.findOne(uuid);
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findOne(id);
   }
 
   @Post()
@@ -27,21 +27,21 @@ export class ProductsController {
     return this.service.create(dto);
   }
 
-  @Delete(':productToken')
+  @Delete(':id')
   @HttpCode(200)
-  remove(@Param('productToken') productToken: string) {
-    return this.service.remove(productToken);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.service.remove(id);
   }
 
-  @Patch(':productToken')
+  @Patch(':id')
   @HttpCode(200)
-  updateStock(@Param('productToken') productToken: string, @Body() dto: UpdateStockDto) {
-    return this.service.updateStock(productToken, dto);
+  updateStock(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateStockDto) {
+    return this.service.updateStock(id, dto);
   }
 
-  @Put(':productToken')
+  @Put(':id')
   @HttpCode(200)
-  replace(@Param('productToken') productToken: string, @Body() dto: ReplaceProductDto) {
-    return this.service.replace(productToken, dto);
+  replace(@Param('id', ParseIntPipe) id: number, @Body() dto: ReplaceProductDto) {
+    return this.service.replace(id, dto);
   }
 }

@@ -13,9 +13,9 @@ export class ProductsService {
     return this.repo.findAll(page, limit);
   }
 
-  async findOne(productToken: string) {
-    const product = await this.repo.findByToken(productToken);
-    if (!product) throw new NotFoundException(`Product '${productToken}' not found`);
+  async findOne(id: number): Promise<Product> {
+    const product = await this.repo.findById(id);
+    if (!product) throw new NotFoundException(`Product #${id} not found`);
     return product;
   }
 
@@ -25,21 +25,18 @@ export class ProductsService {
     return this.repo.create(dto);
   }
 
-  async remove(productToken: string): Promise<void> {
-    const product = await this.repo.findByToken(productToken);
-    if (!product) throw new NotFoundException(`Product '${productToken}' not found`);
-    await this.repo.deleteByToken(productToken);
+  async remove(id: number): Promise<void> {
+    await this.findOne(id);
+    await this.repo.deleteById(id);
   }
 
-  async updateStock(productToken: string, dto: UpdateStockDto): Promise<Product> {
-    const product = await this.repo.findByToken(productToken);
-    if (!product) throw new NotFoundException(`Product '${productToken}' not found`);
-    return this.repo.updateStock(productToken, dto.stock);
+  async updateStock(id: number, dto: UpdateStockDto): Promise<Product> {
+    await this.findOne(id);
+    return this.repo.updateStock(id, dto.stock);
   }
 
-  async replace(productToken: string, dto: ReplaceProductDto): Promise<Product> {
-    const product = await this.repo.findByToken(productToken);
-    if (!product) throw new NotFoundException(`Product '${productToken}' not found`);
-    return this.repo.replace(productToken, dto);
+  async replace(id: number, dto: ReplaceProductDto): Promise<Product> {
+    await this.findOne(id);
+    return this.repo.replace(id, dto);
   }
 }

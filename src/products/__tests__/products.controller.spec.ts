@@ -43,10 +43,10 @@ describe('ProductsController', () => {
   });
 
   describe('findOne', () => {
-    it('returns the product for a given uuid', async () => {
+    it('returns the product for a given id', async () => {
       mockService.findOne.mockResolvedValueOnce(mockProducts[0]);
-      const result = await controller.findOne('tok-001');
-      expect(mockService.findOne).toHaveBeenCalledWith('tok-001');
+      const result = await controller.findOne(1);
+      expect(mockService.findOne).toHaveBeenCalledWith(1);
       expect(result).toEqual(mockProducts[0]);
     });
   });
@@ -65,8 +65,8 @@ describe('ProductsController', () => {
   describe('remove', () => {
     it('delegates to service', async () => {
       mockService.remove.mockResolvedValueOnce(undefined);
-      await controller.remove('tok-001');
-      expect(mockService.remove).toHaveBeenCalledWith('tok-001');
+      await controller.remove(1);
+      expect(mockService.remove).toHaveBeenCalledWith(1);
     });
   });
 
@@ -75,8 +75,8 @@ describe('ProductsController', () => {
       const dto = { stock: 42 };
       const updated: Product = { ...mockProducts[0], stock: 42 };
       mockService.updateStock.mockResolvedValueOnce(updated);
-      const result = await controller.updateStock('tok-001', dto);
-      expect(mockService.updateStock).toHaveBeenCalledWith('tok-001', dto);
+      const result = await controller.updateStock(1, dto);
+      expect(mockService.updateStock).toHaveBeenCalledWith(1, dto);
       expect(result).toEqual(updated);
     });
   });
@@ -86,8 +86,8 @@ describe('ProductsController', () => {
       const dto = { name: 'Updated Widget', price: 19.99, stock: 50 };
       const replaced: Product = { id: 1, productToken: 'tok-001', ...dto };
       mockService.replace.mockResolvedValueOnce(replaced);
-      const result = await controller.replace('tok-001', dto);
-      expect(mockService.replace).toHaveBeenCalledWith('tok-001', dto);
+      const result = await controller.replace(1, dto);
+      expect(mockService.replace).toHaveBeenCalledWith(1, dto);
       expect(result).toEqual(replaced);
     });
   });

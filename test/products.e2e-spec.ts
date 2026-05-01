@@ -1,14 +1,27 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getConnectionToken, getModelToken } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { HttpLoggingInterceptor } from '../src/common/interceptors/http-logging.interceptor';
+import { ProductEntity } from '../src/products/product.entity';
+
+const SEED_DATA = [
+  { productToken: 'tok-001', name: 'Widget A',          price: 9.99,  stock: 100 },
+  { productToken: 'tok-002', name: 'Gadget B',          price: 24.99, stock: 50  },
+  { productToken: 'tok-003', name: 'Doohickey C',       price: 4.49,  stock: 200 },
+  { productToken: 'tok-004', name: 'Thingamajig D',     price: 49.99, stock: 15  },
+  { productToken: 'tok-005', name: 'Whatchamacallit E', price: 14.99, stock: 75  },
+];
 
 describe('Products (e2e)', () => {
   let app: INestApplication<App>;
+  let sequelize: Sequelize;
+  let productModel: typeof ProductEntity;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -17,10 +30,18 @@ describe('Products (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     app.useGlobalInterceptors(new HttpLoggingInterceptor());
     await app.init();
+
+    sequelize = moduleFixture.get<Sequelize>(getConnectionToken());
+    productModel = moduleFixture.get<typeof ProductEntity>(getModelToken(ProductEntity));
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
+  });
+
+  beforeEach(async () => {
+    await sequelize.sync({ force: true });
+    await productModel.bulkCreate(SEED_DATA as any);
   });
 
   // ── GET /products ────────────────────────────────────────────
@@ -48,12 +69,12 @@ describe('Products (e2e)', () => {
     });
   });
 
-  // ── GET /products/:productToken ──────────────────────────────
+  // ── GET /products/:id ──────────────────────────────────────
 
-  describe('GET /products/:productToken', () => {
+  describe('GET /products/:id', () => {
     it('returns the product when found', () => {
       return request(app.getHttpServer())
-        .get('/products/tok-001')
+        .get('/products/1')
         .expect(200)
         .expect(({ body }) => {
           expect(body.productToken).toBe('tok-001');
@@ -61,9 +82,9 @@ describe('Products (e2e)', () => {
         });
     });
 
-    it('returns 404 for unknown token', () => {
+    it('returns 404 for unknown id', () => {
       return request(app.getHttpServer())
-        .get('/products/tok-999')
+        .get('/products/999')
         .expect(404);
     });
   });
@@ -106,12 +127,12 @@ describe('Products (e2e)', () => {
     });
   });
 
-  // ── PATCH /products/:productToken ────────────────────────────
+  // ── PATCH /products/:id ──────────────────────────────────────
 
-  describe('PATCH /products/:productToken', () => {
+  describe('PATCH /products/:id', () => {
     it('updates stock and returns the product', () => {
       return request(app.getHttpServer())
-        .patch('/products/tok-001')
+        .patch('/products/1')
         .send({ stock: 42 })
         .expect(200)
         .expect(({ body }) => {
@@ -120,27 +141,27 @@ describe('Products (e2e)', () => {
         });
     });
 
-    it('returns 404 for unknown token', () => {
+    it('returns 404 for unknown id', () => {
       return request(app.getHttpServer())
-        .patch('/products/tok-999')
+        .patch('/products/999')
         .send({ stock: 5 })
         .expect(404);
     });
 
     it('returns 400 for negative stock', () => {
       return request(app.getHttpServer())
-        .patch('/products/tok-001')
+        .patch('/products/1')
         .send({ stock: -1 })
         .expect(400);
     });
   });
 
-  // ── PUT /products/:productToken ──────────────────────────────
+  // ── PUT /products/:id ────────────────────────────────────────
 
-  describe('PUT /products/:productToken', () => {
+  describe('PUT /products/:id', () => {
     it('replaces name, price and stock and returns the product', () => {
       return request(app.getHttpServer())
-        .put('/products/tok-001')
+        .put('/products/1')
         .send({ name: 'Widget A v2', price: 14.99, stock: 80 })
         .expect(200)
         .expect(({ body }) => {
@@ -151,39 +172,39 @@ describe('Products (e2e)', () => {
         });
     });
 
-    it('returns 404 for unknown token', () => {
+    it('returns 404 for unknown id', () => {
       return request(app.getHttpServer())
-        .put('/products/tok-999')
+        .put('/products/999')
         .send({ name: 'Ghost', price: 1.0, stock: 0 })
         .expect(404);
     });
 
     it('returns 400 when name is missing', () => {
       return request(app.getHttpServer())
-        .put('/products/tok-001')
+        .put('/products/1')
         .send({ price: 9.99, stock: 10 })
         .expect(400);
     });
   });
 
-  // ── DELETE /products/:productToken ───────────────────────────
+  // ── DELETE /products/:id ─────────────────────────────────────
 
-  describe('DELETE /products/:productToken', () => {
+  describe('DELETE /products/:id', () => {
     it('returns 200 when product exists', () => {
       return request(app.getHttpServer())
-        .delete('/products/tok-001')
+        .delete('/products/1')
         .expect(200);
     });
 
-    it('returns 404 for unknown token', () => {
+    it('returns 404 for unknown id', () => {
       return request(app.getHttpServer())
-        .delete('/products/tok-999')
+        .delete('/products/999')
         .expect(404);
     });
 
-    it('returns 404 on a second delete of the same token', async () => {
-      await request(app.getHttpServer()).delete('/products/tok-002').expect(200);
-      await request(app.getHttpServer()).delete('/products/tok-002').expect(404);
+    it('returns 404 on a second delete of the same id', async () => {
+      await request(app.getHttpServer()).delete('/products/2').expect(200);
+      await request(app.getHttpServer()).delete('/products/2').expect(404);
     });
   });
 });

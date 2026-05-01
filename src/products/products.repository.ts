@@ -20,6 +20,11 @@ export class ProductsRepository implements IProductsRepository {
     return { data: rows.map((r) => this.toPlain(r)), total: count };
   }
 
+  async findById(id: number): Promise<Product | null> {
+    const row = await this.model.findByPk(id);
+    return row ? this.toPlain(row) : null;
+  }
+
   async findByToken(productToken: string): Promise<Product | null> {
     const row = await this.model.findOne({ where: { productToken } });
     return row ? this.toPlain(row) : null;
@@ -30,18 +35,18 @@ export class ProductsRepository implements IProductsRepository {
     return this.toPlain(row);
   }
 
-  async deleteByToken(productToken: string): Promise<void> {
-    await this.model.destroy({ where: { productToken } });
+  async deleteById(id: number): Promise<void> {
+    await this.model.destroy({ where: { id } });
   }
 
-  async updateStock(productToken: string, stock: number): Promise<Product> {
-    await this.model.update({ stock }, { where: { productToken } });
-    return this.toPlain((await this.model.findOne({ where: { productToken } }))!);
+  async updateStock(id: number, stock: number): Promise<Product> {
+    await this.model.update({ stock }, { where: { id } });
+    return this.toPlain((await this.model.findByPk(id))!);
   }
 
-  async replace(productToken: string, data: Pick<Product, 'name' | 'price' | 'stock'>): Promise<Product> {
-    await this.model.update(data, { where: { productToken } });
-    return this.toPlain((await this.model.findOne({ where: { productToken } }))!);
+  async replace(id: number, data: Pick<Product, 'name' | 'price' | 'stock'>): Promise<Product> {
+    await this.model.update(data, { where: { id } });
+    return this.toPlain((await this.model.findByPk(id))!);
   }
 
   private toPlain(row: ProductEntity): Product {

@@ -1,38 +1,30 @@
 services:
-  mysql:
+  mysql-test:
     image: mysql:8.4
     environment:
       MYSQL_ROOT_PASSWORD: rootsecret
-      MYSQL_DATABASE: ecommerce
+      MYSQL_DATABASE: ecommerce_test
       MYSQL_USER: app
       MYSQL_PASSWORD: secret
-    ports:
-      - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--protocol=TCP", "-u", "app", "--password=secret"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 30s
-    restart: unless-stopped
 
-  app:
-    build: .
-    ports:
-      - "${PORT:-3000}:3000"
+  e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
     environment:
-      PORT: 3000
-      DB_HOST: mysql
+      DB_HOST: mysql-test
       DB_PORT: 3306
       DB_USER: app
       DB_PASSWORD: secret
-      DB_NAME: ecommerce
+      DB_NAME: ecommerce_test
     depends_on:
-      mysql:
+      mysql-test:
         condition: service_healthy
-    restart: unless-stopped
-
-volumes:
-  mysql_data:
