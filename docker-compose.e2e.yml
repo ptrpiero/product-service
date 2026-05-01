@@ -6,6 +6,8 @@ services:
       MYSQL_DATABASE: ecommerce_test
       MYSQL_USER: app
       MYSQL_PASSWORD: secret
+    networks:
+      - e2e-product-service
     volumes:
       - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
@@ -25,6 +27,11 @@ services:
       DB_USER: app
       DB_PASSWORD: secret
       DB_NAME: ecommerce_test
+    networks:
+      - e2e-product-service
     depends_on:
       mysql-test:
         condition: service_healthy
+
+networks:
+  e2e-product-service:

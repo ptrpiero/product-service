@@ -9,7 +9,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql_dev_data:/var/lib/mysql
+      - mysql_dev_data_p_service:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--protocol=TCP", "-u", "app", "--password=secret"]
       interval: 10s
@@ -17,7 +17,7 @@ services:
       retries: 10
       start_period: 30s
     networks:
-      - dev
+      - dev-product-service
 
   app:
     build:
@@ -39,10 +39,10 @@ services:
       mysql-dev:
         condition: service_healthy
     networks:
-      - dev
+      - dev-product-service
 
 networks:
-  dev:
+  dev-product-service:
 
 volumes:
-  mysql_dev_data:
+  mysql_dev_data_p_service:
