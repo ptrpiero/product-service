@@ -1,0 +1,48 @@
+services:
+  mysql-dev:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: rootsecret
+      MYSQL_DATABASE: ecommerce
+      MYSQL_USER: app
+      MYSQL_PASSWORD: secret
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--protocol=TCP", "-u", "app", "--password=secret"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - dev
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      DB_HOST: mysql-dev
+      DB_PORT: 3306
+      DB_USER: app
+      DB_PASSWORD: secret
+      DB_NAME: ecommerce
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      mysql-dev:
+        condition: service_healthy
+    networks:
+      - dev
+
+networks:
+  dev:
+
+volumes:
+  mysql_dev_data:
