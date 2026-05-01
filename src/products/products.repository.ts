@@ -23,4 +23,29 @@ export class ProductsRepository implements IProductsRepository {
   async findByToken(productToken: string): Promise<Product | null> {
     return this.products.find((p) => p.productToken === productToken) ?? null;
   }
+
+  async create(data: Omit<Product, 'id'>): Promise<Product> {
+    const product: Product = { id: this.products.length + 1, ...data };
+    this.products.push(product);
+    return product;
+  }
+
+  async deleteByToken(productToken: string): Promise<void> {
+    const idx = this.products.findIndex((p) => p.productToken === productToken);
+    if (idx !== -1) this.products.splice(idx, 1);
+  }
+
+  async updateStock(productToken: string, stock: number): Promise<Product> {
+    const product = this.products.find((p) => p.productToken === productToken)!;
+    product.stock = stock;
+    return product;
+  }
+
+  async replace(productToken: string, data: Pick<Product, 'name' | 'price' | 'stock'>): Promise<Product> {
+    const product = this.products.find((p) => p.productToken === productToken)!;
+    product.name = data.name;
+    product.price = data.price;
+    product.stock = data.stock;
+    return product;
+  }
 }

@@ -1,3 +1,4 @@
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from '../products.service';
 import { IProductsRepository } from '../products.repository.interface';
@@ -11,6 +12,10 @@ const mockProducts: Product[] = [
 const mockRepo: IProductsRepository = {
   findAll: jest.fn().mockResolvedValue({ data: mockProducts, total: 2 }),
   findByToken: jest.fn(),
+  create: jest.fn(),
+  deleteByToken: jest.fn(),
+  updateStock: jest.fn(),
+  replace: jest.fn(),
 };
 
 describe('ProductsService', () => {
@@ -25,15 +30,18 @@ describe('ProductsService', () => {
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
+    jest.clearAllMocks();
   });
 
   it('calls repo.findAll with default page and limit', async () => {
+    (mockRepo.findAll as jest.Mock).mockResolvedValueOnce({ data: mockProducts, total: 2 });
     const result = await service.findAll();
     expect(mockRepo.findAll).toHaveBeenCalledWith(1, 10);
     expect(result).toEqual({ data: mockProducts, total: 2 });
   });
 
   it('forwards page and limit to repo', async () => {
+    (mockRepo.findAll as jest.Mock).mockResolvedValueOnce({ data: [], total: 0 });
     await service.findAll(2, 5);
     expect(mockRepo.findAll).toHaveBeenCalledWith(2, 5);
   });
@@ -48,7 +56,79 @@ describe('ProductsService', () => {
 
     it('throws NotFoundException when product is not found', async () => {
       (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(null);
-      await expect(service.findOne('unknown')).rejects.toThrow("Product 'unknown' not found");
+      await expect(service.findOne('unknown')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('create', () => {
+    const dto = { name: 'New', productToken: 'tok-new', price: 5.99, stock: 10 };
+    const created: Product = { id: 6, ...dto };
+
+    it('creates and returns the product when token is unused', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(null);
+      (mockRepo.create as jest.Mock).mockResolvedValueOnce(created);
+      const result = await service.create(dto);
+      expect(mockRepo.findByToken).toHaveBeenCalledWith(dto.productToken);
+      expect(mockRepo.create).toHaveBeenCalledWith(dto);
+      expect(result).toEqual(created);
+    });
+
+    it('throws ConflictException when product token already exists', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(mockProducts[0]);
+      await expect(service.create(dto)).rejects.toThrow(ConflictException);
+      expect(mockRepo.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('remove', () => {
+    it('deletes the product when it exists', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(mockProducts[0]);
+      (mockRepo.deleteByToken as jest.Mock).mockResolvedValueOnce(undefined);
+      await service.remove('tok-001');
+      expect(mockRepo.deleteByToken).toHaveBeenCalledWith('tok-001');
+    });
+
+    it('throws NotFoundException when product does not exist', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(null);
+      await expect(service.remove('tok-999')).rejects.toThrow(NotFoundException);
+      expect(mockRepo.deleteByToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateStock', () => {
+    const updated: Product = { ...mockProducts[0], stock: 42 };
+
+    it('returns the updated product when it exists', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(mockProducts[0]);
+      (mockRepo.updateStock as jest.Mock).mockResolvedValueOnce(updated);
+      const result = await service.updateStock('tok-001', { stock: 42 });
+      expect(mockRepo.updateStock).toHaveBeenCalledWith('tok-001', 42);
+      expect(result).toEqual(updated);
+    });
+
+    it('throws NotFoundException when product does not exist', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(null);
+      await expect(service.updateStock('tok-999', { stock: 5 })).rejects.toThrow(NotFoundException);
+      expect(mockRepo.updateStock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('replace', () => {
+    const dto = { name: 'Updated Widget', price: 19.99, stock: 50 };
+    const replaced: Product = { id: 1, productToken: 'tok-001', ...dto };
+
+    it('returns the replaced product when it exists', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(mockProducts[0]);
+      (mockRepo.replace as jest.Mock).mockResolvedValueOnce(replaced);
+      const result = await service.replace('tok-001', dto);
+      expect(mockRepo.replace).toHaveBeenCalledWith('tok-001', dto);
+      expect(result).toEqual(replaced);
+    });
+
+    it('throws NotFoundException when product does not exist', async () => {
+      (mockRepo.findByToken as jest.Mock).mockResolvedValueOnce(null);
+      await expect(service.replace('tok-999', dto)).rejects.toThrow(NotFoundException);
+      expect(mockRepo.replace).not.toHaveBeenCalled();
     });
   });
 });

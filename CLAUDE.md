@@ -10,7 +10,7 @@ pnpm run build            # compile to dist/
 pnpm run lint             # eslint --fix across src/ and test/
 pnpm run format           # prettier --write across src/ and test/
 
-pnpm run test             # unit tests (src/**/*.spec.ts)
+pnpm run test             # unit tests
 pnpm run test:watch       # unit tests in watch mode
 pnpm run test:e2e         # e2e tests (test/**/*.e2e-spec.ts)
 pnpm run test:cov         # unit tests with coverage
@@ -21,51 +21,50 @@ pnpm run test -- --testPathPattern=products
 
 ## Architecture
 
-This is a **NestJS 11** TypeScript backend microservice targeting an e-commerce products API backed by **MySQL via Sequelize**.
+**NestJS 11** TypeScript backend — e-commerce products API, MySQL via Sequelize (not yet wired; currently in-memory).
+
+### Layered structure: Service → Repository → Model
+
+The `Products` feature lives under `src/products/` and follows a strict layered pattern:
+
+- **Controller** — HTTP only; delegates everything to `ProductsService`
+- **Service** — business logic; depends on `IProductsRepository` (abstract class used as DI token), never touches Sequelize directly
+- **Repository** — owns all data access; implements `IProductsRepository`
+- **Model** — plain data shape (`Product` class), no logic
+
+DI binding in `ProductsModule`: `{ provide: IProductsRepository, useClass: ProductsRepository }`
 
 ### Current state
 
-The repo is at the NestJS scaffold stage — `AppModule` wires `AppController` + `AppService` with a single `GET /` hello route. The planned `Products` feature has not been built yet.
+- `GET /products` — paginated list (`?page=&limit=`)
+- `GET /products/:uuid` — find by `productToken`; 404 if not found
+- Repository is **in-memory** (seeded array); Sequelize/MySQL not yet connected
+- No DTOs or `ValidationPipe` yet
+- Unit tests live in `src/products/__tests__/`
 
-### Target structure (per TASK.md)
+### Remaining endpoints
 
-A `Products` module should be added under `src/products/` using a **Service → Repository → Model** layered architecture:
-
-- **Module** (`products.module.ts`) — declares the feature; wires `{ provide: IProductsRepository, useClass: ProductsRepository }`
-- **Controller** (`products.controller.ts`) — handles HTTP routes, uses `@Controller('products')`, delegates to the service
-- **Service** (`products.service.ts`) — business logic only; depends on `IProductsRepository`, never imports Sequelize or `@InjectModel` directly
-- **Repository** (`products.repository.ts`) — owns all Sequelize queries; injects `@InjectModel(Product)`; exposes domain-oriented methods (`findByToken`, etc.)
-- **Repository interface** (`products.repository.interface.ts`) — abstract class used as the DI token so services depend on an abstraction
-- **Model** (`product.model.ts`) — Sequelize model definition only, no logic
-
-`AppModule` should import `SequelizeModule.forRoot(...)` (MySQL connection) and `ProductsModule`.
-
-### Endpoints to implement
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/products` | Create — body: `name`, `productToken`, `price`, `stock` |
-| GET | `/products` | List — paginated |
-| GET | `/products/:id` | Get one by id or productToken |
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/products` | Create; body: `name`, `productToken`, `price`, `stock` |
 | PATCH/PUT | `/products/:id` | Update stock |
 | DELETE | `/products/:id` | Delete |
 
-### Database schema
+### Database schema (target)
 
 Table `products` in database `ecommerce`:
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | integer | PK, auto-increment |
-| `productToken` | string | unique |
+| `productToken` | string | unique identifier |
 | `name` | string | |
 | `price` | decimal | |
 | `stock` | integer | |
 
-### Key technical constraints
+### Key constraints
 
-- Use `sequelize` package directly (not `sequelize-typescript`) unless you prefer the latter — both are acceptable
-- Validate request bodies with `class-validator` + `class-transformer` (add as deps); return 400/404/409 with meaningful messages
-- No implicit `any` is **not** enforced (`noImplicitAny: false`), but `strictNullChecks` is on
-- `emitDecoratorMetadata` and `experimentalDecorators` are enabled — required for NestJS DI metadata
-- Unit tests live alongside source (`src/**/*.spec.ts`); e2e tests live in `test/` and use a separate Jest config (`test/jest-e2e.json`)
+- Validate request bodies with `class-validator` + `class-transformer`; return 400/404/409 with meaningful messages
+- `noImplicitAny: false`, `strictNullChecks: true`
+- `emitDecoratorMetadata` + `experimentalDecorators` enabled (required for NestJS DI)
+- e2e tests use a separate Jest config: `test/jest-e2e.json`
