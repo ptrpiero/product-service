@@ -22,7 +22,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: apps/product-service/Dockerfile.dev
     ports:
       - "${PORT:-3000}:3000"
     environment:
@@ -35,6 +35,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+      - /app/apps/product-service/node_modules
     depends_on:
       mysql-dev:
         condition: service_healthy

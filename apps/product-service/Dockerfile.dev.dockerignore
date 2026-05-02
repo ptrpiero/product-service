@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/coverage
+.git
+**/*.md
+apps/product-service/src
+apps/product-service/test
+apps/product-service/.env
+apps/product-service/.env.*
+infra/
+packages/
+.turbo
