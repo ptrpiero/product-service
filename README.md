@@ -1,121 +1,62 @@
-# Product Service Monorepo
+# Product Service
 
-pnpm workspace + Turborepo monorepo. NestJS e-commerce products API on AWS Lambda + API Gateway, Angular dashboard on CloudFront + S3.
+Cloud-native REST API (NestJS) + Angular admin dashboard.
 
-## Structure
+**API doc:** `<CloudFrontUrl>/api-doc`  
+**Dashboard:** `<CloudFrontUrl>`
 
-```
-apps/product-service/   NestJS 11 products API (MySQL / Sequelize)
-apps/dashboard/         Angular 21 admin dashboard (Tailwind CSS)
-infra/cdk/              AWS CDK TypeScript — VPC, RDS, Lambda, Cognito, API Gateway, CloudFront
-packages/               shared libs (reserved)
-scripts/                monorepo utility scripts
-```
+## Stack
 
-## Prerequisites
+- NestJS 11 · Fastify · Sequelize · MySQL 8
+- Angular 21 · Tailwind CSS
+- AWS Lambda + API Gateway HTTP v2 · CloudFront + S3 · RDS · Cognito
 
-- Node 24+, pnpm 10+
-- Docker (for local dev / e2e)
-- AWS CLI + credentials (for CDK deploy only)
+## Monorepo
 
-## Install
+| Path | Description |
+|------|-------------|
+| `apps/product-service/` | NestJS API |
+| `apps/dashboard/` | Angular dashboard |
+| `infra/cdk/` | AWS CDK — VPC, RDS, Lambda, Cognito, API GW, CloudFront |
+| `scripts/` | `deploy-frontend.ts` |
 
-```bash
-pnpm install
-```
+## Commands
 
-## Scripts
-
-All scripts run from the monorepo root.
-
-| Script | Description |
-|--------|-------------|
-| `pnpm dev` | API + MySQL via Docker (watch mode) |
-| `pnpm dev:dashboard` | Angular dev server on `:4200` (no auth) |
-| `pnpm build` | Build all packages |
-| `pnpm test` | Unit tests (all packages) |
-| `pnpm test:e2e` | E2e tests via Docker (exits when done) |
-| `pnpm lint` | Lint all packages |
+| Command | Description |
+|---------|-------------|
+| `pnpm install` | Install dependencies |
+| `pnpm test` | Unit tests |
+| `pnpm test:e2e` | E2e tests (Docker, exits when done) |
+| `pnpm dev` | API + MySQL in Docker (watch mode → `:3000`) |
+| `pnpm dev:dashboard` | Angular dev server (`:4200`, auth bypassed) |
 | `pnpm deploy` | Deploy all CDK stacks to AWS |
-| `pnpm deploy:frontend` | Build dashboard → sync to S3 → invalidate CloudFront |
+| `pnpm deploy:frontend` | Build + S3 sync + CloudFront invalidation |
 
-## Local development
+## Local dev
 
 ```bash
-# API + MySQL with hot-reload (bind-mounted source)
-pnpm dev
-# → http://localhost:3000
-# → http://localhost:3000/api-doc  (Swagger UI, set SWAGGER_ENABLED=true locally)
-
-# Angular dashboard (proxies API calls to localhost:3000)
-pnpm dev:dashboard
-# → http://localhost:4200  (auth bypassed in dev)
+pnpm dev            # → http://localhost:3000
+pnpm dev:dashboard  # → http://localhost:4200
 ```
 
-## Tests
+## Deploy
 
 ```bash
-# Unit tests (no DB)
-pnpm test
-
-# E2e tests — spins up MySQL test container, runs suites, exits
-pnpm test:e2e
-```
-
-## Deploy to AWS
-
-### First-time setup
-
-```bash
-# Bootstrap CDK (once per account/region)
+# Bootstrap CDK once per account/region
 cd infra/cdk && npx cdk bootstrap aws://ACCOUNT_ID/eu-west-1
-```
 
-### Infrastructure
-
-Deploys six stacks: Network → Database → Lambda → Frontend (S3 + CloudFront) → Cognito → API Gateway.
-
-```bash
+# Deploy infra (Network → DB → Lambda → Frontend → Cognito → API GW)
 pnpm deploy
-```
 
-Outputs printed after deploy:
-
-| Output | Stack |
-|--------|-------|
-| `ApiUrl` | `ProductServiceApiGatewayStack` |
-| `UserPoolId` / `UserPoolClientId` | `ProductServiceCognitoStack` |
-| `CloudFrontUrl` | `ProductServiceFrontendStack` |
-
-### Frontend
-
-After first `pnpm deploy`, fill in `apps/dashboard/src/environments/environment.prod.ts`:
-
-```typescript
-export const environment = {
-  production: true,
-  apiBaseUrl: 'https://<ApiUrl>',
-  cognito: {
-    region: 'eu-west-1',
-    userPoolId: '<UserPoolId>',
-    userPoolClientId: '<UserPoolClientId>',
-    domain: 'product-service-dashboard',
-  },
-};
-```
-
-Then build and deploy the frontend:
-
-```bash
+# After first deploy: fill in apps/dashboard/src/environments/environment.prod.ts
+# with ApiUrl, UserPoolId, UserPoolClientId from CDK outputs, then:
 pnpm deploy:frontend
-# Builds Angular, syncs to S3, invalidates CloudFront cache
 ```
 
-Dashboard URL: printed as `CloudFrontUrl` in CDK outputs.  
-Swagger UI: `<CloudFrontUrl>/api-doc`
+## Architecture
 
-### Tear down
-
-```bash
-pnpm --filter @product-service/cdk run destroy
-```
+- **IaC with CDK** — all infrastructure defined as TypeScript (AWS CDK); six stacks: Network, Database, Lambda, Frontend, Cognito, API Gateway
+- **Lambda over Docker** — migrated from ECS to Lambda (lower cost, scales to zero); Fastify `inject()` handles API GW HTTP v2 payload natively
+- **Layered** — Controller → Service → `IProductsRepository` (abstract DI token) → `ProductsRepository` (Sequelize); Service never imports Sequelize
+- **Auth at the edge** — Cognito JWT authorizer on API Gateway; NestJS has no auth logic; OPTIONS preflights bypass the authorizer for CORS
+- **Swagger on CloudFront** — Lambda serves `/api-doc`; CloudFront behavior `/api-doc*` proxies to API Gateway; CDN assets via jsDelivr (esbuild can't bundle `swagger-ui-dist` statics)

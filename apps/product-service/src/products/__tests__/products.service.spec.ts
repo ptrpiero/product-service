@@ -37,14 +37,14 @@ describe('ProductsService', () => {
   it('calls repo.findAll with default page and limit', async () => {
     (mockRepo.findAll as jest.Mock).mockResolvedValueOnce({ data: mockProducts, total: 2 });
     const result = await service.findAll();
-    expect(mockRepo.findAll).toHaveBeenCalledWith(1, 10);
+    expect(mockRepo.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined, undefined);
     expect(result).toEqual({ data: mockProducts, total: 2 });
   });
 
   it('forwards page and limit to repo', async () => {
     (mockRepo.findAll as jest.Mock).mockResolvedValueOnce({ data: [], total: 0 });
     await service.findAll(2, 5);
-    expect(mockRepo.findAll).toHaveBeenCalledWith(2, 5);
+    expect(mockRepo.findAll).toHaveBeenCalledWith(2, 5, undefined, undefined, undefined);
   });
 
   describe('findOne', () => {
