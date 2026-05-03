@@ -9,7 +9,7 @@ services:
     networks:
       - e2e-product-service
     volumes:
-      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+      - ./apps/product-service/docker/mysql-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--protocol=TCP", "-u", "app", "--password=secret"]
       interval: 10s
@@ -20,7 +20,7 @@ services:
   e2e:
     build:
       context: .
-      dockerfile: Dockerfile.e2e
+      dockerfile: apps/product-service/Dockerfile.e2e
     environment:
       DB_HOST: mysql-test
       DB_PORT: 3306

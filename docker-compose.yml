@@ -19,7 +19,9 @@ services:
     restart: unless-stopped
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: apps/product-service/Dockerfile
     ports:
       - "${PORT:-3000}:3000"
     environment:
