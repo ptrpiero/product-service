@@ -16,7 +16,7 @@ export interface LambdaStackProps extends cdk.StackProps {
 }
 
 export class LambdaStack extends cdk.Stack {
-  public readonly lambdaFunction: lambda.IFunction;
+  public readonly lambdaFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -62,6 +62,7 @@ export class LambdaStack extends cdk.Stack {
       securityGroups: [props.lambdaSecurityGroup],
       environment: {
         NODE_ENV: 'production',
+        SWAGGER_ENABLED: 'true',
         DB_HOST: props.dbHost,
         DB_PORT: props.dbPort,
         DB_NAME: props.dbName,

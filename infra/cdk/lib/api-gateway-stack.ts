@@ -14,6 +14,7 @@ export interface ApiGatewayStackProps extends cdk.StackProps {
 
 export class ApiGatewayStack extends cdk.Stack {
   public readonly apiUrl: string;
+  public readonly apiDomainName: string;
 
   constructor(scope: Construct, id: string, props: ApiGatewayStackProps) {
     super(scope, id, props);
@@ -55,7 +56,20 @@ export class ApiGatewayStack extends cdk.Stack {
       authorizer,
     });
 
+    // Unprotected routes for Swagger UI (no JWT auth)
+    httpApi.addRoutes({
+      path: '/api-doc',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: lambdaIntegration,
+    });
+    httpApi.addRoutes({
+      path: '/api-doc/{proxy+}',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: lambdaIntegration,
+    });
+
     this.apiUrl = httpApi.apiEndpoint;
+    this.apiDomainName = cdk.Fn.select(2, cdk.Fn.split('/', httpApi.apiEndpoint));
 
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: httpApi.apiEndpoint,

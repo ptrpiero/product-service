@@ -16,13 +16,23 @@ export async function createApp(adapter?: AbstractHttpAdapter): Promise<INestApp
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.useGlobalInterceptors(new HttpLoggingInterceptor());
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.SWAGGER_ENABLED === 'true') {
     const config = new DocumentBuilder()
       .setTitle('Product Service')
       .setDescription('E-commerce products REST API')
       .setVersion('1.0')
+      .addBearerAuth()
+      .addServer(process.env.API_URL ?? 'http://localhost:3000')
       .build();
-    SwaggerModule.setup('swagger', app, SwaggerModule.createDocument(app, config));
+    const document = SwaggerModule.createDocument(app, config);
+    document.security = [{ bearer: [] }];
+    SwaggerModule.setup('api-doc', app, document, {
+      customJs: [
+        'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js',
+        'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js',
+      ],
+      customCssUrl: 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css',
+    });
   }
 
   return app;

@@ -33,7 +33,13 @@ const lambdaStack = new LambdaStack(app, 'ProductServiceLambdaStack', {
   dbName: databaseStack.dbName,
 });
 
-const frontendStack = new ProductServiceFrontendStack(app, 'ProductServiceFrontendStack', { env });
+// Hardcoded to avoid circular dep: FrontendStack → ApiGatewayStack → CognitoStack → FrontendStack
+const API_GW_DOMAIN = '5m9rw84cec.execute-api.eu-west-1.amazonaws.com';
+
+const frontendStack = new ProductServiceFrontendStack(app, 'ProductServiceFrontendStack', {
+  env,
+  apiDomainName: API_GW_DOMAIN,
+});
 
 const cognitoStack = new CognitoStack(app, 'ProductServiceCognitoStack', {
   env,
@@ -43,9 +49,11 @@ const cognitoStack = new CognitoStack(app, 'ProductServiceCognitoStack', {
   ],
 });
 
-new ApiGatewayStack(app, 'ProductServiceApiGatewayStack', {
+const apiGatewayStack = new ApiGatewayStack(app, 'ProductServiceApiGatewayStack', {
   env,
   lambdaFunction: lambdaStack.lambdaFunction,
   userPool: cognitoStack.userPool,
   userPoolClient: cognitoStack.userPoolClient,
 });
+
+lambdaStack.lambdaFunction.addEnvironment('API_URL', `https://${API_GW_DOMAIN}`);
