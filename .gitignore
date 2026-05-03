@@ -10,6 +10,9 @@ node_modules/
 # Turbo
 .turbo/
 
+# Angular
+.angular/
+
 # Logs
 logs/
 *.log

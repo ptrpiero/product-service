@@ -9,6 +9,10 @@ export async function createApp(adapter?: AbstractHttpAdapter): Promise<INestApp
     ? await NestFactory.create(AppModule, adapter)
     : await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.useGlobalInterceptors(new HttpLoggingInterceptor());
 
