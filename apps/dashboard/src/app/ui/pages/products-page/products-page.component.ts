@@ -26,35 +26,38 @@ import { HttpErrorResponse } from '@angular/common/http';
   ],
   template: `
     <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-lg font-semibold text-gray-900">Products</h2>
-          <p class="text-sm text-gray-400 mt-0.5">{{ total() }} total items</p>
-        </div>
-        <app-button variant="primary" (click)="isAddModalOpen.set(true)">
-          + Add Product
-        </app-button>
-      </div>
+      <div class="flex items-center gap-3">
+        <h2 class="text-sm font-semibold text-zinc-900 mr-1">Products</h2>
+        <span class="text-xs text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full tabular-nums">{{ total() }}</span>
 
-      <div class="relative">
-        <input
-          type="text"
-          placeholder="Search by name or token (min 3 chars)..."
-          class="w-full sm:w-80 px-3 py-2 pl-9 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder:text-gray-400"
-          (input)="onSearchInput($any($event.target).value)"
-        />
-        <svg
-          class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
-          fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-        </svg>
+        <div class="relative flex-1 max-w-xs">
+          <input
+            type="text"
+            placeholder="Search name or token…"
+            class="w-full px-3 py-1.5 pl-8 text-sm bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:bg-white focus:border-zinc-400 placeholder:text-zinc-400 transition-colors"
+            (input)="onSearchInput($any($event.target).value)"
+          />
+          <svg
+            class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+        </div>
+
+        <div class="ml-auto">
+          <app-button variant="primary" (click)="isAddModalOpen.set(true)">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            New product
+          </app-button>
+        </div>
       </div>
 
       @if (error()) {
-        <div class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span class="font-medium">API error:</span> {{ error() }}
+        <div class="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-xs text-red-600">
+          <span class="font-semibold">Error</span><span class="text-red-400">·</span>{{ error() }}
         </div>
       }
 

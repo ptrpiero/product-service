@@ -17,13 +17,11 @@ export class ButtonComponent {
 
   classes = computed(() => {
     const base =
-      'inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer';
+      'inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer';
     const variants: Record<string, string> = {
-      primary: 'bg-sky-600 text-white hover:bg-sky-700 focus:ring-sky-500',
-      danger:
-        'bg-red-50 text-red-700 hover:bg-red-100 focus:ring-red-400 border border-red-200',
-      ghost:
-        'bg-white text-gray-600 hover:bg-gray-100 focus:ring-gray-300 border border-gray-200',
+      primary: 'bg-zinc-900 text-white hover:bg-zinc-700 focus:ring-zinc-900',
+      danger: 'text-red-500 hover:text-red-700 hover:bg-red-50 focus:ring-red-300',
+      ghost: 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 focus:ring-zinc-300',
     };
     return `${base} ${variants[this.variant()]}`;
   });

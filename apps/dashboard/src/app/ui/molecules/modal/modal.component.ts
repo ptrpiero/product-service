@@ -10,21 +10,16 @@ import { Component, HostListener, input, output } from '@angular/core';
           class="absolute inset-0 bg-black/30 backdrop-blur-sm"
           (click)="closed.emit()"
         ></div>
-        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 z-10">
-          <div class="flex items-center justify-between mb-5">
-            <h2 class="text-base font-semibold text-gray-900">{{ title() }}</h2>
+        <div class="relative bg-white rounded-xl shadow-lg shadow-zinc-200/60 border border-zinc-100 w-full max-w-md mx-4 p-6 z-10">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-sm font-semibold text-zinc-900">{{ title() }}</h2>
             <button
               (click)="closed.emit()"
-              class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+              class="text-zinc-300 hover:text-zinc-600 transition-colors p-1 rounded-md hover:bg-zinc-50"
               type="button"
             >
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>

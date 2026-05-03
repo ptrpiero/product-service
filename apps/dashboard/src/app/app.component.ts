@@ -6,11 +6,12 @@ import { RouterOutlet } from '@angular/router';
   standalone: true,
   imports: [RouterOutlet],
   template: `
-    <div class="min-h-screen bg-gray-50">
-      <header class="bg-white border-b border-gray-200 px-6 py-4">
-        <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Product Dashboard</h1>
+    <div class="min-h-screen bg-white">
+      <header class="border-b border-zinc-100 px-8 h-14 flex items-center gap-2.5">
+        <div class="w-4 h-4 bg-zinc-900 rounded-sm flex-shrink-0"></div>
+        <span class="text-sm font-semibold text-zinc-900 tracking-tight">Dashboard</span>
       </header>
-      <main class="p-6">
+      <main class="px-8 py-8">
         <router-outlet />
       </main>
     </div>

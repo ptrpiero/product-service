@@ -7,9 +7,9 @@ import { ButtonComponent } from '../../atoms/button/button.component';
   imports: [ButtonComponent],
   template: `
     <div class="flex items-center justify-between px-1">
-      <p class="text-sm text-gray-500">
-        Page <span class="font-medium text-gray-700">{{ currentPage() }}</span> of
-        <span class="font-medium text-gray-700">{{ totalPages() }}</span>
+      <p class="text-xs text-zinc-400 tabular-nums">
+        Page <span class="font-medium text-zinc-600">{{ currentPage() }}</span> of
+        <span class="font-medium text-zinc-600">{{ totalPages() }}</span>
       </p>
       <div class="flex gap-2">
         <app-button

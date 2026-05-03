@@ -12,46 +12,46 @@ import { Product, UpdateProductDto } from '../../../core/services/products.servi
     <app-modal [isOpen]="isOpen()" title="Edit Product" (closed)="cancelled.emit()">
       <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
         <div>
-          <label class="block text-xs font-medium text-gray-700 mb-1">Name</label>
+          <label class="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Name</label>
           <input
             formControlName="name"
             type="text"
-            class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder:text-gray-400"
+            class="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-sm focus:outline-none focus:bg-white focus:border-zinc-400 placeholder:text-zinc-400 transition-colors"
           />
           @if (form.get('name')?.invalid && form.get('name')?.touched) {
-            <p class="text-xs text-red-500 mt-1">Name is required.</p>
+            <p class="text-[11px] text-red-400 mt-1">Name is required.</p>
           }
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Price</label>
+            <label class="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Price</label>
             <input
               formControlName="price"
               type="number"
               step="0.01"
               min="0.01"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder:text-gray-400"
+              class="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-sm focus:outline-none focus:bg-white focus:border-zinc-400 placeholder:text-zinc-400 transition-colors"
             />
             @if (form.get('price')?.invalid && form.get('price')?.touched) {
-              <p class="text-xs text-red-500 mt-1">Valid price required.</p>
+              <p class="text-[11px] text-red-400 mt-1">Valid price required.</p>
             }
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Stock</label>
+            <label class="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Stock</label>
             <input
               formControlName="stock"
               type="number"
               min="0"
-              class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder:text-gray-400"
+              class="w-full px-3 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-sm focus:outline-none focus:bg-white focus:border-zinc-400 placeholder:text-zinc-400 transition-colors"
             />
             @if (form.get('stock')?.invalid && form.get('stock')?.touched) {
-              <p class="text-xs text-red-500 mt-1">Stock ≥ 0 required.</p>
+              <p class="text-[11px] text-red-400 mt-1">Stock ≥ 0 required.</p>
             }
           </div>
         </div>
 
-        <div class="flex justify-end gap-2 pt-2">
+        <div class="flex justify-end gap-1.5 pt-4 border-t border-zinc-100">
           <app-button variant="ghost" type="button" (click)="cancelled.emit()">Cancel</app-button>
           <app-button variant="primary" type="submit" [disabled]="form.invalid">Save</app-button>
         </div>
