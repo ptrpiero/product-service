@@ -7,9 +7,15 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "format": "turbo run format"
+    "test:e2e": "docker compose -f docker-compose.e2e.yml up --build --abort-on-container-exit",
+    "format": "turbo run format",
+    "dev": "docker compose -f docker-compose.dev.yml up --build",
+    "dev:dashboard": "pnpm --filter @product-service/dashboard start:dev",
+    "deploy": "pnpm --filter @product-service/cdk run deploy",
+    "deploy:frontend": "tsx scripts/deploy-frontend.ts"
   },
   "devDependencies": {
+    "tsx": "^4.19.2",
     "turbo": "^2.5.4"
   },
   "engines": {
