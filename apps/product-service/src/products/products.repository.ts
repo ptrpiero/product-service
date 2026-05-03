@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
 import { Product } from './product.model';
 import { ProductEntity } from './product.entity';
 import { IProductsRepository } from './products.repository.interface';
@@ -11,11 +12,30 @@ export class ProductsRepository implements IProductsRepository {
     private readonly model: typeof ProductEntity,
   ) {}
 
-  async findAll(page: number, limit: number): Promise<{ data: Product[]; total: number }> {
+  private static readonly SORTABLE = ['name', 'productToken'] as const;
+
+  async findAll(
+    page: number,
+    limit: number,
+    search?: string,
+    sortBy?: string,
+    sortOrder: 'ASC' | 'DESC' = 'ASC',
+  ): Promise<{ data: Product[]; total: number }> {
+    const col = ProductsRepository.SORTABLE.includes(sortBy as any) ? sortBy! : 'id';
+    const where = search
+      ? {
+          [Op.or]: [
+            { name: { [Op.like]: `%${search}%` } },
+            { productToken: { [Op.like]: `%${search}%` } },
+          ],
+        }
+      : undefined;
+
     const { rows, count } = await this.model.findAndCountAll({
       limit,
       offset: (page - 1) * limit,
-      order: [['id', 'ASC']],
+      order: [[col, sortOrder]],
+      where,
     });
     return { data: rows.map((r) => this.toPlain(r)), total: count };
   }

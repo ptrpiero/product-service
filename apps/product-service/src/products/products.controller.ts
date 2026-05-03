@@ -16,6 +16,9 @@ export class ProductsController {
   @ApiOperation({ summary: 'List products', description: 'Returns a paginated list of all products.' })
   @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-based)' })
   @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page' })
+  @ApiQuery({ name: 'search', required: false, description: 'Filter by name or productToken (case-insensitive contains)' })
+  @ApiQuery({ name: 'sortBy', required: false, enum: ['name', 'productToken'], description: 'Column to sort by' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Sort direction' })
   @ApiOkResponse({
     description: 'Paginated product list',
     schema: {
@@ -28,8 +31,11 @@ export class ProductsController {
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ) {
-    return this.service.findAll(page, limit);
+    return this.service.findAll(page, limit, search, sortBy, sortOrder);
   }
 
   @Get(':id')

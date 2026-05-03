@@ -9,8 +9,8 @@ import { Product } from './product.model';
 export class ProductsService {
   constructor(private readonly repo: IProductsRepository) {}
 
-  findAll(page = 1, limit = 10) {
-    return this.repo.findAll(page, limit);
+  findAll(page = 1, limit = 10, search?: string, sortBy?: string, sortOrder?: 'ASC' | 'DESC') {
+    return this.repo.findAll(page, limit, search, sortBy, sortOrder);
   }
 
   async findOne(id: number): Promise<Product> {

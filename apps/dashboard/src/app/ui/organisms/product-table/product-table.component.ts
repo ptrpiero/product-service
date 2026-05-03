@@ -11,7 +11,7 @@ import { Product } from '../../../core/services/products.service';
   imports: [BadgeComponent, ButtonComponent, SpinnerComponent, CurrencyPipe],
   template: `
     <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-      <table class="w-full min-w-[640px] text-sm">
+      <table class="w-full min-w-[720px] text-sm">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th
@@ -20,14 +20,34 @@ import { Product } from '../../../core/services/products.service';
               ID
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none group"
+              (click)="onHeaderClick('name')"
             >
-              Name
+              <span class="flex items-center gap-1">
+                Name
+                <span class="text-gray-400 text-xs">
+                  @if (sortBy() === 'name') {
+                    {{ sortOrder() === 'ASC' ? '↑' : '↓' }}
+                  } @else {
+                    <span class="opacity-0 group-hover:opacity-60">↕</span>
+                  }
+                </span>
+              </span>
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none group"
+              (click)="onHeaderClick('productToken')"
             >
-              Token
+              <span class="flex items-center gap-1">
+                Token
+                <span class="text-gray-400 text-xs">
+                  @if (sortBy() === 'productToken') {
+                    {{ sortOrder() === 'ASC' ? '↑' : '↓' }}
+                  } @else {
+                    <span class="opacity-0 group-hover:opacity-60">↕</span>
+                  }
+                </span>
+              </span>
             </th>
             <th
               class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28"
@@ -39,7 +59,7 @@ import { Product } from '../../../core/services/products.service';
             >
               Stock
             </th>
-            <th class="px-4 py-3 w-20"></th>
+            <th class="px-4 py-3 w-32"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -72,9 +92,14 @@ import { Product } from '../../../core/services/products.service';
                   <app-badge [value]="product.stock" />
                 </td>
                 <td class="px-4 py-3 text-right">
-                  <app-button variant="danger" (click)="deleteRequested.emit(product.id)">
-                    Delete
-                  </app-button>
+                  <div class="flex justify-end gap-2">
+                    <app-button variant="ghost" (click)="editRequested.emit(product)">
+                      Edit
+                    </app-button>
+                    <app-button variant="danger" (click)="deleteRequested.emit(product.id)">
+                      Delete
+                    </app-button>
+                  </div>
                 </td>
               </tr>
             }
@@ -87,5 +112,16 @@ import { Product } from '../../../core/services/products.service';
 export class ProductTableComponent {
   products = input.required<Product[]>();
   isLoading = input(false);
+  sortBy = input<string | null>(null);
+  sortOrder = input<'ASC' | 'DESC'>('ASC');
+
   deleteRequested = output<number>();
+  editRequested = output<Product>();
+  sortChange = output<{ col: string; order: 'ASC' | 'DESC' }>();
+
+  onHeaderClick(col: string) {
+    const nextOrder =
+      this.sortBy() === col && this.sortOrder() === 'ASC' ? 'DESC' : 'ASC';
+    this.sortChange.emit({ col, order: nextOrder });
+  }
 }

@@ -1,7 +1,13 @@
 import { Product } from './product.model';
 
 export abstract class IProductsRepository {
-  abstract findAll(page: number, limit: number): Promise<{ data: Product[]; total: number }>;
+  abstract findAll(
+    page: number,
+    limit: number,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: 'ASC' | 'DESC',
+  ): Promise<{ data: Product[]; total: number }>;
   abstract findById(id: number): Promise<Product | null>;
   abstract findByToken(productToken: string): Promise<Product | null>;
   abstract create(data: Omit<Product, 'id'>): Promise<Product>;
