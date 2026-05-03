@@ -2,12 +2,18 @@ import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 
+export interface CognitoStackProps extends cdk.StackProps {
+  callbackUrls?: string[];
+}
+
 export class CognitoStack extends cdk.Stack {
   public readonly userPool: cognito.UserPool;
   public readonly userPoolClient: cognito.UserPoolClient;
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: CognitoStackProps) {
     super(scope, id, props);
+
+    const callbackUrls = props?.callbackUrls ?? ['http://localhost:4200/callback'];
 
     this.userPool = new cognito.UserPool(this, 'UserPool', {
       userPoolName: 'product-service-user-pool',
@@ -25,6 +31,10 @@ export class CognitoStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    const domain = this.userPool.addDomain('HostedUIDomain', {
+      cognitoDomain: { domainPrefix: 'product-service-dashboard' },
+    });
+
     this.userPoolClient = new cognito.UserPoolClient(this, 'UserPoolClient', {
       userPool: this.userPool,
       userPoolClientName: 'product-service-app-client',
@@ -36,6 +46,22 @@ export class CognitoStack extends cdk.Stack {
       accessTokenValidity: cdk.Duration.hours(1),
       idTokenValidity: cdk.Duration.hours(1),
       refreshTokenValidity: cdk.Duration.days(30),
+      oAuth: {
+        flows: { authorizationCodeGrant: true },
+        scopes: [
+          cognito.OAuthScope.EMAIL,
+          cognito.OAuthScope.OPENID,
+          cognito.OAuthScope.PROFILE,
+        ],
+        callbackUrls,
+        logoutUrls: callbackUrls.map((u) => u.replace(/\/callback$/, '')),
+      },
+    });
+
+    new cdk.CfnOutput(this, 'CognitoDomain', {
+      value: domain.domainName,
+      description: 'Cognito Hosted UI domain prefix',
+      exportName: 'ProductServiceCognitoDomain',
     });
 
     new cdk.CfnOutput(this, 'UserPoolId', {

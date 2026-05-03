@@ -6,6 +6,7 @@ import { DatabaseStack } from '../lib/database-stack';
 import { LambdaStack } from '../lib/lambda-stack';
 import { CognitoStack } from '../lib/cognito-stack';
 import { ApiGatewayStack } from '../lib/api-gateway-stack';
+import { ProductServiceFrontendStack } from '../lib/frontend-stack';
 
 const app = new cdk.App();
 
@@ -32,7 +33,15 @@ const lambdaStack = new LambdaStack(app, 'ProductServiceLambdaStack', {
   dbName: databaseStack.dbName,
 });
 
-const cognitoStack = new CognitoStack(app, 'ProductServiceCognitoStack', { env });
+const frontendStack = new ProductServiceFrontendStack(app, 'ProductServiceFrontendStack', { env });
+
+const cognitoStack = new CognitoStack(app, 'ProductServiceCognitoStack', {
+  env,
+  callbackUrls: [
+    'http://localhost:4200/callback',
+    `https://${frontendStack.distribution.distributionDomainName}/callback`,
+  ],
+});
 
 new ApiGatewayStack(app, 'ProductServiceApiGatewayStack', {
   env,

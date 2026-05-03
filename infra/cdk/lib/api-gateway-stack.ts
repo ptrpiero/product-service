@@ -29,12 +29,30 @@ export class ApiGatewayStack extends cdk.Stack {
       { jwtAudience: [props.userPoolClient.userPoolClientId] },
     );
 
-    // Catch-all proxy: all requests forwarded to Lambda
     const httpApi = new apigwv2.HttpApi(this, 'HttpApi', {
       apiName: 'product-service-api',
       description: 'API Gateway HTTP API for Product Service',
-      defaultIntegration: lambdaIntegration,
-      defaultAuthorizer: authorizer,
+      corsPreflight: {
+        allowOrigins: ['*'],
+        allowMethods: [apigwv2.CorsHttpMethod.ANY],
+        allowHeaders: ['Authorization', 'Content-Type'],
+        maxAge: cdk.Duration.days(1),
+      },
+    });
+
+    // OPTIONS intentionally excluded — corsPreflight handles it natively without JWT check
+    httpApi.addRoutes({
+      path: '/{proxy+}',
+      methods: [
+        apigwv2.HttpMethod.GET,
+        apigwv2.HttpMethod.POST,
+        apigwv2.HttpMethod.PUT,
+        apigwv2.HttpMethod.PATCH,
+        apigwv2.HttpMethod.DELETE,
+        apigwv2.HttpMethod.HEAD,
+      ],
+      integration: lambdaIntegration,
+      authorizer,
     });
 
     this.apiUrl = httpApi.apiEndpoint;
