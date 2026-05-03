@@ -29,8 +29,8 @@ Cloud-native REST API (NestJS) + Angular admin dashboard.
 | `pnpm test:e2e` | E2e tests (Docker, exits when done) |
 | `pnpm dev` | API + MySQL in Docker (watch mode → `:3000`) |
 | `pnpm dev:dashboard` | Angular dev server (`:4200`, auth bypassed) |
-| `pnpm deploy` | Deploy all CDK stacks to AWS |
-| `pnpm deploy:frontend` | Build + S3 sync + CloudFront invalidation |
+| `pnpm run deploy` | Deploy all CDK stacks to AWS |
+| `pnpm run deploy:frontend` | Build + S3 sync + CloudFront invalidation |
 
 ## Local dev
 
@@ -46,11 +46,11 @@ pnpm dev:dashboard  # → http://localhost:4200
 cd infra/cdk && npx cdk bootstrap aws://ACCOUNT_ID/eu-west-1
 
 # Deploy infra (Network → DB → Lambda → Frontend → Cognito → API GW)
-pnpm deploy
+pnpm run deploy
 
 # After first deploy: fill in apps/dashboard/src/environments/environment.prod.ts
 # with ApiUrl, UserPoolId, UserPoolClientId from CDK outputs, then:
-pnpm deploy:frontend
+pnpm run deploy:frontend
 ```
 
 ## Architecture
