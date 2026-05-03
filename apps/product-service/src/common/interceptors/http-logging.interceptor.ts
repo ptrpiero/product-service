@@ -1,14 +1,13 @@
 import { CallHandler, ExecutionContext, HttpException, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { Observable, catchError, tap, throwError } from 'rxjs';
-import { Request, Response } from 'express';
 
 @Injectable()
 export class HttpLoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const req = context.switchToHttp().getRequest<Request>();
-    const res = context.switchToHttp().getResponse<Response>();
+    const req = context.switchToHttp().getRequest<{ method: string; url: string }>();
+    const res = context.switchToHttp().getResponse<{ statusCode: number }>();
     const { method, url } = req;
     const start = Date.now();
 

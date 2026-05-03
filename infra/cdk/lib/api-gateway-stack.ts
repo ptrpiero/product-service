@@ -1,13 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as apigwv2 from 'aws-cdk-lib/aws-apigatewayv2';
-import { HttpAlbIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import { HttpJwtAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 
 export interface ApiGatewayStackProps extends cdk.StackProps {
-  vpc: ec2.IVpc;
-  internalAlbListener: elbv2.IApplicationListener;
+  lambdaFunction: lambda.IFunction;
+  userPool: cognito.IUserPool;
+  userPoolClient: cognito.IUserPoolClient;
 }
 
 export class ApiGatewayStack extends cdk.Stack {
@@ -16,23 +18,23 @@ export class ApiGatewayStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiGatewayStackProps) {
     super(scope, id, props);
 
-    // VPC Link connects API Gateway to the private ALB inside the VPC
-    const vpcLink = new apigwv2.VpcLink(this, 'VpcLink', {
-      vpc: props.vpc,
-      subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-    });
-
-    const albIntegration = new HttpAlbIntegration(
-      'AlbIntegration',
-      props.internalAlbListener,
-      { vpcLink },
+    const lambdaIntegration = new HttpLambdaIntegration(
+      'LambdaIntegration',
+      props.lambdaFunction,
     );
 
-    // Catch-all proxy: all requests forwarded to the internal ALB
+    const authorizer = new HttpJwtAuthorizer(
+      'CognitoAuthorizer',
+      `https://cognito-idp.${this.region}.amazonaws.com/${props.userPool.userPoolId}`,
+      { jwtAudience: [props.userPoolClient.userPoolClientId] },
+    );
+
+    // Catch-all proxy: all requests forwarded to Lambda
     const httpApi = new apigwv2.HttpApi(this, 'HttpApi', {
       apiName: 'product-service-api',
       description: 'API Gateway HTTP API for Product Service',
-      defaultIntegration: albIntegration,
+      defaultIntegration: lambdaIntegration,
+      defaultAuthorizer: authorizer,
     });
 
     this.apiUrl = httpApi.apiEndpoint;

@@ -3,14 +3,15 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { NetworkStack } from '../lib/network-stack';
 import { DatabaseStack } from '../lib/database-stack';
-import { EcsStack } from '../lib/ecs-stack';
+import { LambdaStack } from '../lib/lambda-stack';
+import { CognitoStack } from '../lib/cognito-stack';
 import { ApiGatewayStack } from '../lib/api-gateway-stack';
 
 const app = new cdk.App();
 
 const env: cdk.Environment = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
-  region: process.env.CDK_DEFAULT_REGION ?? 'us-east-1',
+  region: process.env.CDK_DEFAULT_REGION ?? 'eu-west-1',
 };
 
 const networkStack = new NetworkStack(app, 'ProductServiceNetworkStack', { env });
@@ -21,19 +22,21 @@ const databaseStack = new DatabaseStack(app, 'ProductServiceDatabaseStack', {
   dbSecurityGroup: networkStack.dbSecurityGroup,
 });
 
-const ecsStack = new EcsStack(app, 'ProductServiceEcsStack', {
+const lambdaStack = new LambdaStack(app, 'ProductServiceLambdaStack', {
   env,
   vpc: networkStack.vpc,
-  ecsSecurityGroup: networkStack.ecsSecurityGroup,
-  albSecurityGroup: networkStack.albSecurityGroup,
+  lambdaSecurityGroup: networkStack.lambdaSecurityGroup,
   dbSecret: databaseStack.dbSecret,
   dbHost: databaseStack.dbHost,
   dbPort: databaseStack.dbPort,
   dbName: databaseStack.dbName,
 });
 
+const cognitoStack = new CognitoStack(app, 'ProductServiceCognitoStack', { env });
+
 new ApiGatewayStack(app, 'ProductServiceApiGatewayStack', {
   env,
-  vpc: networkStack.vpc,
-  internalAlbListener: ecsStack.internalAlbListener,
+  lambdaFunction: lambdaStack.lambdaFunction,
+  userPool: cognitoStack.userPool,
+  userPoolClient: cognitoStack.userPoolClient,
 });

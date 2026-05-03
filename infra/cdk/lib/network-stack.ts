@@ -4,8 +4,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 export class NetworkStack extends cdk.Stack {
   public readonly vpc: ec2.IVpc;
-  public readonly albSecurityGroup: ec2.SecurityGroup;
-  public readonly ecsSecurityGroup: ec2.SecurityGroup;
+  public readonly lambdaSecurityGroup: ec2.SecurityGroup;
   public readonly dbSecurityGroup: ec2.SecurityGroup;
 
   constructor(scope: Construct, id: string, props: cdk.StackProps) {
@@ -33,40 +32,23 @@ export class NetworkStack extends cdk.Stack {
       ],
     });
 
-    // ALB SG: accepts HTTP from API Gateway VPC Link (VPC Link ENIs originate from VPC CIDR)
-    this.albSecurityGroup = new ec2.SecurityGroup(this, 'AlbSecurityGroup', {
+    // Lambda SG: allows all outbound (Secrets Manager, RDS); no inbound needed
+    this.lambdaSecurityGroup = new ec2.SecurityGroup(this, 'LambdaSecurityGroup', {
       vpc: this.vpc,
-      description: 'Internal ALB — accept HTTP from API Gateway VPC Link',
+      description: 'Lambda function: outbound to RDS and Secrets Manager',
       allowAllOutbound: true,
     });
-    this.albSecurityGroup.addIngressRule(
-      ec2.Peer.ipv4(this.vpc.vpcCidrBlock),
-      ec2.Port.tcp(80),
-      'Allow from API Gateway VPC Link (VPC CIDR)',
-    );
 
-    // ECS SG: accepts port 3000 from the ALB only
-    this.ecsSecurityGroup = new ec2.SecurityGroup(this, 'EcsSecurityGroup', {
-      vpc: this.vpc,
-      description: 'ECS Fargate tasks — accept traffic from internal ALB',
-      allowAllOutbound: true,
-    });
-    this.ecsSecurityGroup.addIngressRule(
-      this.albSecurityGroup,
-      ec2.Port.tcp(3000),
-      'Allow from internal ALB to NestJS port 3000',
-    );
-
-    // DB SG: accepts MySQL from ECS only; no outbound needed
+    // DB SG: accepts MySQL from Lambda only; no outbound needed
     this.dbSecurityGroup = new ec2.SecurityGroup(this, 'DbSecurityGroup', {
       vpc: this.vpc,
-      description: 'RDS MySQL — accept traffic from ECS tasks only',
+      description: 'RDS MySQL: accept traffic from Lambda only',
       allowAllOutbound: false,
     });
     this.dbSecurityGroup.addIngressRule(
-      this.ecsSecurityGroup,
+      this.lambdaSecurityGroup,
       ec2.Port.tcp(3306),
-      'Allow MySQL from ECS tasks',
+      'Allow MySQL from Lambda',
     );
   }
 }

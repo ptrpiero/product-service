@@ -7,9 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 /                              ← monorepo root (pnpm workspace + Turborepo)
 ├── apps/
-│   └── product-service/       ← NestJS 11 e-commerce API
+│   └── product-service/       ← NestJS 11 e-commerce API (Fastify platform)
 ├── infra/
-│   └── cdk/                   ← AWS CDK TypeScript app (VPC, RDS, ECS Fargate, API GW)
+│   └── cdk/                   ← AWS CDK TypeScript app (VPC, RDS, Lambda, Cognito, API GW)
 ├── packages/                  ← shared libs (empty, reserved for future use)
 ├── turbo.json
 ├── pnpm-workspace.yaml
@@ -66,11 +66,22 @@ Build context for all three is the monorepo root; Dockerfiles live under `apps/p
 | `docker-compose.dev.yml` | Dev with watch mode + bind mount | `docker compose -f docker-compose.dev.yml up --build` |
 | `docker-compose.e2e.yml` | E2e test runner (exits when done) | `docker compose -f docker-compose.e2e.yml up --build --abort-on-container-exit` |
 
-The dev compose bind-mounts the monorepo root into the container at `/app`. Two anonymous volumes protect the container's installed packages from being overwritten by the host: `/app/node_modules` (workspace root store) and `/app/apps/product-service/node_modules` (app symlinks).
+Docker uses `main.ts` → `createApp()` → `app.listen()`. Lambda uses `lambda.ts` → `createApp()` → Fastify `inject()`. Both share `bootstrap.ts`.
 
 ## Architecture
 
-**NestJS 11** TypeScript backend — e-commerce products API backed by MySQL via Sequelize.
+**NestJS 11** TypeScript backend — e-commerce products API backed by MySQL via Sequelize.  
+**HTTP platform**: Fastify (`@nestjs/platform-fastify`). Express is NOT used.
+
+### Entrypoints
+
+| File | Used by | Notes |
+|------|---------|-------|
+| `src/bootstrap.ts` | both | shared NestJS setup: pipes, interceptors, Swagger (non-prod only) |
+| `src/main.ts` | Docker / local dev | `FastifyAdapter({ logger: true })` + `app.listen(port, '0.0.0.0')` |
+| `src/lambda.ts` | AWS Lambda | `FastifyAdapter()` + Fastify native `inject()` — no external adapter lib |
+
+`lambda.ts` caches the Fastify instance across warm invocations. Handles API Gateway HTTP API v2 payload format (`APIGatewayProxyEventV2`).
 
 ### Layered structure
 
@@ -95,7 +106,9 @@ DI binding in `ProductsModule`: `{ provide: IProductsRepository, useClass: Produ
 - MySQL 8.4, database `ecommerce`, table `products`
 - `synchronize: true` in `SequelizeModule` → `CREATE TABLE IF NOT EXISTS` on startup
 - `DatabaseSeederService` (`apps/product-service/src/database/database.module.ts`) — implements `OnApplicationBootstrap`; seeds 5 products if the table is empty
-- Env vars: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (loaded via `@nestjs/config`)
+- Env vars (local/Docker): `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+- Env vars (Lambda): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_SECRET_ARN` — credentials fetched from Secrets Manager at cold start via `@aws-sdk/client-secrets-manager`
+- Connection pool: `{ min: 0, max: 2 }` — Lambda safeguard (no RDS Proxy)
 
 ### API
 
@@ -110,9 +123,11 @@ All routes are under `/products`. Identifiers use numeric `id` (PK), not `produc
 | PUT | `/products/:id` | Replaces `name`, `price`, `stock` |
 | DELETE | `/products/:id` | 404 if not found |
 
+All routes protected by Cognito JWT authorizer at API Gateway level — no auth logic in NestJS.
+
 ### Swagger
 
-Available at `/swagger` when `NODE_ENV !== 'production'`. Set up in `apps/product-service/src/main.ts` using `DocumentBuilder` + `SwaggerModule`. Full coverage: `@ApiProperty` on all DTOs and the `Product` model; `@ApiOperation`/`@ApiResponse`/`@ApiParam` on every controller method.
+Available at `/swagger` when `NODE_ENV !== 'production'`. Set up in `bootstrap.ts`. Full coverage: `@ApiProperty` on all DTOs and the `Product` model; `@ApiOperation`/`@ApiResponse`/`@ApiParam` on every controller method.
 
 ### Testing
 
@@ -126,18 +141,22 @@ Available at `/swagger` when `NODE_ENV !== 'production'`. Set up in `apps/produc
 - Sequelize model columns must use `declare` (not `!`) to avoid overwriting Sequelize property descriptors
 - `productToken` has a `@Unique` index — enforced at DB level
 - `synchronize: true` is dev-only safe; disable in production and use migrations instead
+- `mysql2` is loaded dynamically by Sequelize (`require(dialectVar)` — not a string literal). esbuild cannot bundle it statically. Solution: mark as `external` and run `npm install mysql2` into the output directory from `build-lambda.mjs`
 
 ## CDK infrastructure
 
-Four stacks deployed in order:
+Five stacks deployed in order:
 
 | Stack | Resources |
 |-------|-----------|
-| `ProductServiceNetworkStack` | VPC (2 AZs, 1 NAT), public/private/isolated subnets, 3 security groups |
-| `ProductServiceDatabaseStack` | RDS MySQL 8.0 t3.micro, Secrets Manager credentials |
-| `ProductServiceEcsStack` | ECS Fargate cluster + service, internal ALB, CloudWatch logs |
-| `ProductServiceApiGatewayStack` | HTTP API, VPC Link → internal ALB |
+| `ProductServiceNetworkStack` | VPC (2 AZs, 1 NAT), public/private/isolated subnets, 2 security groups (Lambda + DB) |
+| `ProductServiceDatabaseStack` | RDS MySQL 8.0 t3.micro, Secrets Manager credentials at `/product-service/db/credentials` |
+| `ProductServiceLambdaStack` | Lambda function (Node 22, 512 MB, 30s), esbuild bundle, VPC private subnet |
+| `ProductServiceCognitoStack` | User Pool (email sign-in, admin-only), User Pool Client |
+| `ProductServiceApiGatewayStack` | HTTP API v2, `HttpLambdaIntegration`, Cognito JWT `defaultAuthorizer` |
 
-- **Image build**: `DockerImageAsset` builds `apps/product-service/Dockerfile` from the monorepo root during `cdk deploy`
-- **DB credentials**: injected as container secrets from Secrets Manager; secret path `/product-service/db/credentials`
-- **API URL**: printed as `ProductServiceApiUrl` CloudFormation output after deploy
+- **Lambda bundle**: `infra/cdk/scripts/build-lambda.mjs` — esbuild + `@anatine/esbuild-decorators` plugin; single minified file ~4–5 MB; mysql2 installed separately via `npm install`
+- **Asset hashing**: `AssetHashType.OUTPUT` — CDK hashes bundler output, not source. Prevents reuse of stale S3 assets when bundling strategy changes
+- **DB credentials**: Lambda fetches at cold start from Secrets Manager using `DB_SECRET_ARN` env var
+- **API URL**: printed as `ProductServiceApiGatewayStack.ApiUrl` CloudFormation output after deploy
+- **Deployed region**: `eu-west-1`
