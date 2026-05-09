@@ -10,6 +10,7 @@ import { AppService } from './app.service';
 import { ProductsModule } from './products/products.module';
 import { DatabaseModule } from './database/database.module';
 import { ProductEntity } from './products/product.entity';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { ProductEntity } from './products/product.entity';
     }),
     ProductsModule,
     DatabaseModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
