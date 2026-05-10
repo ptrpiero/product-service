@@ -31,7 +31,10 @@ import { UserEntity } from './users/user.entity';
           const { SecretString } = await client.send(
             new GetSecretValueCommand({ SecretId: secretArn }),
           );
-          const secret = JSON.parse(SecretString!);
+          const secret = JSON.parse(SecretString!) as {
+            username: string;
+            password: string;
+          };
           username = secret.username;
           password = secret.password;
         }

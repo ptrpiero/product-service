@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op } from 'sequelize';
+import { type CreationAttributes, Op } from 'sequelize';
 import { User } from './user.model';
 import { UserEntity } from './user.entity';
 import { IUsersRepository } from './users.repository.interface';
@@ -21,10 +21,14 @@ export class UsersRepository implements IUsersRepository {
     sortBy?: string,
     sortOrder: 'ASC' | 'DESC' = 'ASC',
   ): Promise<{ data: User[]; total: number }> {
-    const col = UsersRepository.SORTABLE.includes(sortBy as any) ? sortBy! : 'id';
+    const col = UsersRepository.SORTABLE.includes(
+      sortBy as (typeof UsersRepository.SORTABLE)[number],
+    )
+      ? sortBy!
+      : 'id';
     const where = search
       ? {
-          username: { [Op.like]: `%${search}%` } 
+          username: { [Op.like]: `%${search}%` },
         }
       : undefined;
 
@@ -43,7 +47,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   async create(data: Omit<User, 'id'>): Promise<User> {
-    const row = await this.model.create(data as any);
+    const row = await this.model.create(data as CreationAttributes<UserEntity>);
     return this.toPlain(row);
   }
 
@@ -57,7 +61,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   private toPlain(row: UserEntity): User {
-    const p = row.get({ plain: true }) as any;
+    const p = row.get({ plain: true }) as UserEntity;
     return {
       id: p.id,
       username: p.username,

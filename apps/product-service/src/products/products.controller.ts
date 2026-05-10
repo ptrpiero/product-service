@@ -1,5 +1,27 @@
-import { Body, Controller, DefaultValuePipe, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Put, Query } from '@nestjs/common';
-import { ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiExtraModels,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateStockDto } from './dto/update-stock.dto';
@@ -13,12 +35,39 @@ export class ProductsController {
   constructor(private readonly service: ProductsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List products', description: 'Returns a paginated list of all products.' })
-  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-based)' })
-  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page' })
-  @ApiQuery({ name: 'search', required: false, description: 'Filter by name or productToken (case-insensitive contains)' })
-  @ApiQuery({ name: 'sortBy', required: false, enum: ['name', 'productToken'], description: 'Column to sort by' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Sort direction' })
+  @ApiOperation({
+    summary: 'List products',
+    description: 'Returns a paginated list of all products.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    example: 1,
+    description: 'Page number (1-based)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Filter by name or productToken (case-insensitive contains)',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['name', 'productToken'],
+    description: 'Column to sort by',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort direction',
+  })
   @ApiOkResponse({
     description: 'Paginated product list',
     schema: {
@@ -69,23 +118,36 @@ export class ProductsController {
 
   @Patch(':id')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Update stock', description: 'Partially updates only the stock field.' })
+  @ApiOperation({
+    summary: 'Update stock',
+    description: 'Partially updates only the stock field.',
+  })
   @ApiParam({ name: 'id', example: 1 })
   @ApiResponse({ status: 200, type: Product })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  updateStock(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateStockDto) {
+  updateStock(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateStockDto,
+  ) {
     return this.service.updateStock(id, dto);
   }
 
   @Put(':id')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Replace a product', description: 'Replaces name, price and stock. productToken cannot be changed.' })
+  @ApiOperation({
+    summary: 'Replace a product',
+    description:
+      'Replaces name, price and stock. productToken cannot be changed.',
+  })
   @ApiParam({ name: 'id', example: 1 })
   @ApiResponse({ status: 200, type: Product })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  replace(@Param('id', ParseIntPipe) id: number, @Body() dto: ReplaceProductDto) {
+  replace(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReplaceProductDto,
+  ) {
     return this.service.replace(id, dto);
   }
 }

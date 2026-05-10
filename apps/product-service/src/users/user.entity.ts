@@ -1,4 +1,11 @@
-import { AutoIncrement, Column, DataType, Model, PrimaryKey, Table, Unique } from 'sequelize-typescript';
+import {
+  Column,
+  DataType,
+  Model,
+  PrimaryKey,
+  Table,
+  Unique,
+} from 'sequelize-typescript';
 
 @Table({ tableName: 'users', timestamps: false })
 export class UserEntity extends Model {

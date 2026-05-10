@@ -7,11 +7,11 @@ import { UsersRepository } from './user.repository';
 import { IUsersRepository } from './users.repository.interface';
 
 @Module({
-  imports:[SequelizeModule.forFeature([UserEntity])],
+  imports: [SequelizeModule.forFeature([UserEntity])],
   controllers: [UsersController],
   providers: [
     UsersService,
-    {provide: IUsersRepository, useClass: UsersRepository}
+    { provide: IUsersRepository, useClass: UsersRepository },
   ],
 })
 export class UsersModule {}
