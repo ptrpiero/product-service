@@ -13,5 +13,8 @@ export abstract class IProductsRepository {
   abstract create(data: Omit<Product, 'id'>): Promise<Product>;
   abstract deleteById(id: number): Promise<void>;
   abstract updateStock(id: number, stock: number): Promise<Product>;
-  abstract replace(id: number, data: Pick<Product, 'name' | 'price' | 'stock'>): Promise<Product>;
+  abstract replace(
+    id: number,
+    data: Pick<Product, 'name' | 'price' | 'stock'>,
+  ): Promise<Product>;
 }

@@ -10,6 +10,8 @@ import { AppService } from './app.service';
 import { ProductsModule } from './products/products.module';
 import { DatabaseModule } from './database/database.module';
 import { ProductEntity } from './products/product.entity';
+import { UsersModule } from './users/users.module';
+import { UserEntity } from './users/user.entity';
 
 @Module({
   imports: [
@@ -29,7 +31,10 @@ import { ProductEntity } from './products/product.entity';
           const { SecretString } = await client.send(
             new GetSecretValueCommand({ SecretId: secretArn }),
           );
-          const secret = JSON.parse(SecretString!);
+          const secret = JSON.parse(SecretString!) as {
+            username: string;
+            password: string;
+          };
           username = secret.username;
           password = secret.password;
         }
@@ -41,7 +46,7 @@ import { ProductEntity } from './products/product.entity';
           username,
           password,
           database: config.get<string>('DB_NAME', 'ecommerce'),
-          models: [ProductEntity],
+          models: [ProductEntity, UserEntity],
           synchronize: true,
           autoLoadModels: true,
           logging: false,
@@ -50,6 +55,7 @@ import { ProductEntity } from './products/product.entity';
       },
     }),
     ProductsModule,
+    UsersModule,
     DatabaseModule,
   ],
   controllers: [AppController],

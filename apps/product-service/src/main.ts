@@ -5,4 +5,4 @@ async function bootstrap() {
   const app = await createApp(new FastifyAdapter({ logger: true }));
   await app.listen(parseInt(process.env.PORT ?? '3000'), '0.0.0.0');
 }
-bootstrap();
+void bootstrap();

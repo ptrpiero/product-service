@@ -1,16 +1,35 @@
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { createApp } from './bootstrap';
-import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2, Context } from 'aws-lambda';
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyStructuredResultV2,
+} from 'aws-lambda';
 
 // aws-lambda-fastify only supports Fastify v4; we use Fastify's built-in inject()
 // to process Lambda events natively without an external adapter.
-let fastifyInstance: any;
+interface InjectableServer {
+  ready(): Promise<void>;
+  inject(opts: {
+    method: string;
+    url: string;
+    headers?: Record<string, string | undefined>;
+    payload?: string;
+  }): Promise<{
+    statusCode: number;
+    headers: Record<string, string | string[] | undefined>;
+    body: string;
+  }>;
+}
 
-async function bootstrap() {
+let fastifyInstance: InjectableServer | undefined;
+
+async function bootstrap(): Promise<InjectableServer> {
   if (!fastifyInstance) {
     const nestApp = await createApp(new FastifyAdapter());
     await nestApp.init();
-    fastifyInstance = nestApp.getHttpAdapter().getInstance();
+    fastifyInstance = nestApp
+      .getHttpAdapter()
+      .getInstance() as InjectableServer;
     await fastifyInstance.ready();
   }
   return fastifyInstance;
@@ -18,11 +37,11 @@ async function bootstrap() {
 
 export const lambdaHandler = async (
   event: APIGatewayProxyEventV2,
-  _context: Context,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
   const server = await bootstrap();
 
-  const url = event.rawPath + (event.rawQueryString ? `?${event.rawQueryString}` : '');
+  const url =
+    event.rawPath + (event.rawQueryString ? `?${event.rawQueryString}` : '');
 
   const response = await server.inject({
     method: event.requestContext.http.method,

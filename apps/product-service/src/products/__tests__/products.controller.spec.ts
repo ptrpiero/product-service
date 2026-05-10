@@ -32,14 +32,26 @@ describe('ProductsController', () => {
   it('returns paginated products with default params', async () => {
     mockService.findAll.mockResolvedValueOnce({ data: mockProducts, total: 1 });
     const result = await controller.findAll(1, 10);
-    expect(mockService.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined, undefined);
+    expect(mockService.findAll).toHaveBeenCalledWith(
+      1,
+      10,
+      undefined,
+      undefined,
+      undefined,
+    );
     expect(result).toEqual({ data: mockProducts, total: 1 });
   });
 
   it('passes page and limit through to the service', async () => {
     mockService.findAll.mockResolvedValueOnce({ data: [], total: 0 });
     await controller.findAll(3, 5);
-    expect(mockService.findAll).toHaveBeenCalledWith(3, 5, undefined, undefined, undefined);
+    expect(mockService.findAll).toHaveBeenCalledWith(
+      3,
+      5,
+      undefined,
+      undefined,
+      undefined,
+    );
   });
 
   describe('findOne', () => {
@@ -53,7 +65,12 @@ describe('ProductsController', () => {
 
   describe('create', () => {
     it('delegates to service and returns the created product', async () => {
-      const dto = { name: 'New', productToken: 'tok-new', price: 5.99, stock: 10 };
+      const dto = {
+        name: 'New',
+        productToken: 'tok-new',
+        price: 5.99,
+        stock: 10,
+      };
       const created: Product = { id: 6, ...dto };
       mockService.create.mockResolvedValueOnce(created);
       const result = await controller.create(dto);

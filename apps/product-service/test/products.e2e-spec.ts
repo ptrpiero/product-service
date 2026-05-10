@@ -2,18 +2,27 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getConnectionToken, getModelToken } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
+import type { CreationAttributes } from 'sequelize';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { HttpLoggingInterceptor } from '../src/common/interceptors/http-logging.interceptor';
 import { ProductEntity } from '../src/products/product.entity';
+import { Product } from '../src/products/product.model';
+
+type PaginatedProducts = { total: number; data: Product[] };
 
 const SEED_DATA = [
-  { productToken: 'tok-001', name: 'Widget A',          price: 9.99,  stock: 100 },
-  { productToken: 'tok-002', name: 'Gadget B',          price: 24.99, stock: 50  },
-  { productToken: 'tok-003', name: 'Doohickey C',       price: 4.49,  stock: 200 },
-  { productToken: 'tok-004', name: 'Thingamajig D',     price: 49.99, stock: 15  },
-  { productToken: 'tok-005', name: 'Whatchamacallit E', price: 14.99, stock: 75  },
+  { productToken: 'tok-001', name: 'Widget A', price: 9.99, stock: 100 },
+  { productToken: 'tok-002', name: 'Gadget B', price: 24.99, stock: 50 },
+  { productToken: 'tok-003', name: 'Doohickey C', price: 4.49, stock: 200 },
+  { productToken: 'tok-004', name: 'Thingamajig D', price: 49.99, stock: 15 },
+  {
+    productToken: 'tok-005',
+    name: 'Whatchamacallit E',
+    price: 14.99,
+    stock: 75,
+  },
 ];
 
 describe('Products (e2e)', () => {
@@ -32,7 +41,9 @@ describe('Products (e2e)', () => {
     await app.init();
 
     sequelize = moduleFixture.get<Sequelize>(getConnectionToken());
-    productModel = moduleFixture.get<typeof ProductEntity>(getModelToken(ProductEntity));
+    productModel = moduleFixture.get<typeof ProductEntity>(
+      getModelToken(ProductEntity),
+    );
   });
 
   afterAll(async () => {
@@ -41,7 +52,9 @@ describe('Products (e2e)', () => {
 
   beforeEach(async () => {
     await sequelize.sync({ force: true });
-    await productModel.bulkCreate(SEED_DATA as any);
+    await productModel.bulkCreate(
+      SEED_DATA as CreationAttributes<ProductEntity>[],
+    );
   });
 
   // ── GET /products ────────────────────────────────────────────
@@ -51,7 +64,7 @@ describe('Products (e2e)', () => {
       return request(app.getHttpServer())
         .get('/products')
         .expect(200)
-        .expect(({ body }) => {
+        .expect(({ body }: { body: PaginatedProducts }) => {
           expect(body.total).toBe(5);
           expect(body.data).toHaveLength(5);
         });
@@ -61,7 +74,7 @@ describe('Products (e2e)', () => {
       return request(app.getHttpServer())
         .get('/products?page=2&limit=2')
         .expect(200)
-        .expect(({ body }) => {
+        .expect(({ body }: { body: PaginatedProducts }) => {
           expect(body.total).toBe(5);
           expect(body.data).toHaveLength(2);
           expect(body.data[0].productToken).toBe('tok-003');
@@ -76,16 +89,14 @@ describe('Products (e2e)', () => {
       return request(app.getHttpServer())
         .get('/products/1')
         .expect(200)
-        .expect(({ body }) => {
+        .expect(({ body }: { body: Product }) => {
           expect(body.productToken).toBe('tok-001');
           expect(body.name).toBe('Widget A');
         });
     });
 
     it('returns 404 for unknown id', () => {
-      return request(app.getHttpServer())
-        .get('/products/999')
-        .expect(404);
+      return request(app.getHttpServer()).get('/products/999').expect(404);
     });
   });
 
@@ -95,9 +106,14 @@ describe('Products (e2e)', () => {
     it('creates and returns a product with 201', () => {
       return request(app.getHttpServer())
         .post('/products')
-        .send({ name: 'New Thing', productToken: 'tok-new', price: 12.99, stock: 30 })
+        .send({
+          name: 'New Thing',
+          productToken: 'tok-new',
+          price: 12.99,
+          stock: 30,
+        })
         .expect(201)
-        .expect(({ body }) => {
+        .expect(({ body }: { body: Product }) => {
           expect(body.productToken).toBe('tok-new');
           expect(body.name).toBe('New Thing');
           expect(body.price).toBe(12.99);
@@ -135,7 +151,7 @@ describe('Products (e2e)', () => {
         .patch('/products/1')
         .send({ stock: 42 })
         .expect(200)
-        .expect(({ body }) => {
+        .expect(({ body }: { body: Product }) => {
           expect(body.productToken).toBe('tok-001');
           expect(body.stock).toBe(42);
         });
@@ -164,7 +180,7 @@ describe('Products (e2e)', () => {
         .put('/products/1')
         .send({ name: 'Widget A v2', price: 14.99, stock: 80 })
         .expect(200)
-        .expect(({ body }) => {
+        .expect(({ body }: { body: Product }) => {
           expect(body.productToken).toBe('tok-001');
           expect(body.name).toBe('Widget A v2');
           expect(body.price).toBe(14.99);
@@ -191,15 +207,11 @@ describe('Products (e2e)', () => {
 
   describe('DELETE /products/:id', () => {
     it('returns 200 when product exists', () => {
-      return request(app.getHttpServer())
-        .delete('/products/1')
-        .expect(200);
+      return request(app.getHttpServer()).delete('/products/1').expect(200);
     });
 
     it('returns 404 for unknown id', () => {
-      return request(app.getHttpServer())
-        .delete('/products/999')
-        .expect(404);
+      return request(app.getHttpServer()).delete('/products/999').expect(404);
     });
 
     it('returns 404 on a second delete of the same id', async () => {

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Op } from 'sequelize';
+import { type CreationAttributes, Op } from 'sequelize';
 import { Product } from './product.model';
 import { ProductEntity } from './product.entity';
 import { IProductsRepository } from './products.repository.interface';
@@ -21,7 +21,11 @@ export class ProductsRepository implements IProductsRepository {
     sortBy?: string,
     sortOrder: 'ASC' | 'DESC' = 'ASC',
   ): Promise<{ data: Product[]; total: number }> {
-    const col = ProductsRepository.SORTABLE.includes(sortBy as any) ? sortBy! : 'id';
+    const col = ProductsRepository.SORTABLE.includes(
+      sortBy as (typeof ProductsRepository.SORTABLE)[number],
+    )
+      ? sortBy!
+      : 'id';
     const where = search
       ? {
           [Op.or]: [
@@ -51,7 +55,9 @@ export class ProductsRepository implements IProductsRepository {
   }
 
   async create(data: Omit<Product, 'id'>): Promise<Product> {
-    const row = await this.model.create(data as any);
+    const row = await this.model.create(
+      data as CreationAttributes<ProductEntity>,
+    );
     return this.toPlain(row);
   }
 
@@ -64,18 +70,21 @@ export class ProductsRepository implements IProductsRepository {
     return this.toPlain((await this.model.findByPk(id))!);
   }
 
-  async replace(id: number, data: Pick<Product, 'name' | 'price' | 'stock'>): Promise<Product> {
+  async replace(
+    id: number,
+    data: Pick<Product, 'name' | 'price' | 'stock'>,
+  ): Promise<Product> {
     await this.model.update(data, { where: { id } });
     return this.toPlain((await this.model.findByPk(id))!);
   }
 
   private toPlain(row: ProductEntity): Product {
-    const p = row.get({ plain: true }) as any;
+    const p = row.get({ plain: true }) as ProductEntity;
     return {
       id: p.id,
       productToken: p.productToken,
       name: p.name,
-      price: parseFloat(p.price),
+      price: parseFloat(String(p.price)),
       stock: p.stock,
     };
   }

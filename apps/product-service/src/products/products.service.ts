@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { IProductsRepository } from './products.repository.interface';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateStockDto } from './dto/update-stock.dto';
@@ -9,7 +13,13 @@ import { Product } from './product.model';
 export class ProductsService {
   constructor(private readonly repo: IProductsRepository) {}
 
-  findAll(page = 1, limit = 10, search?: string, sortBy?: string, sortOrder?: 'ASC' | 'DESC') {
+  findAll(
+    page = 1,
+    limit = 10,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: 'ASC' | 'DESC',
+  ) {
     return this.repo.findAll(page, limit, search, sortBy, sortOrder);
   }
 
@@ -21,7 +31,10 @@ export class ProductsService {
 
   async create(dto: CreateProductDto): Promise<Product> {
     const existing = await this.repo.findByToken(dto.productToken);
-    if (existing) throw new ConflictException(`Product '${dto.productToken}' already exists`);
+    if (existing)
+      throw new ConflictException(
+        `Product '${dto.productToken}' already exists`,
+      );
     return this.repo.create(dto);
   }
 

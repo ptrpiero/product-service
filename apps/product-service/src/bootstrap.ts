@@ -4,7 +4,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpLoggingInterceptor } from './common/interceptors/http-logging.interceptor';
 
-export async function createApp(adapter?: AbstractHttpAdapter): Promise<INestApplication> {
+export async function createApp(
+  adapter?: AbstractHttpAdapter,
+): Promise<INestApplication> {
   const app = adapter
     ? await NestFactory.create(AppModule, adapter)
     : await NestFactory.create(AppModule);
@@ -31,7 +33,8 @@ export async function createApp(adapter?: AbstractHttpAdapter): Promise<INestApp
         'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js',
         'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js',
       ],
-      customCssUrl: 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css',
+      customCssUrl:
+        'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css',
     });
   }
 
