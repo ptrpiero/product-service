@@ -11,6 +11,7 @@ import { ProductsModule } from './products/products.module';
 import { DatabaseModule } from './database/database.module';
 import { ProductEntity } from './products/product.entity';
 import { UsersModule } from './users/users.module';
+import { UserEntity } from './users/user.entity';
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { UsersModule } from './users/users.module';
           username,
           password,
           database: config.get<string>('DB_NAME', 'ecommerce'),
-          models: [ProductEntity],
+          models: [ProductEntity, UserEntity],
           synchronize: true,
           autoLoadModels: true,
           logging: false,
@@ -51,8 +52,8 @@ import { UsersModule } from './users/users.module';
       },
     }),
     ProductsModule,
-    DatabaseModule,
     UsersModule,
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],

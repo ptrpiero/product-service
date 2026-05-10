@@ -2,19 +2,6 @@ import { Body, Controller, Get, HttpCode, Injectable, Logger, Param, Post } from
 import { UsersService } from './users.service';
 import { CreateUserDTO } from './dto/create-user.dto';
 
-type User = {
-  id: String
-  username: String
-}
-
-const users: User[] = [{
-  id: 'u1',
-  username: 'Tom'
-}, {
-  id: 'u2',
-  username: 'Sam'
-}]
-
 @Injectable()
 @Controller('users')
 export class UsersController {
@@ -25,18 +12,18 @@ export class UsersController {
 
   @Get()
   findAll() {
-    return users
+    return this.usersService.findAll()
   }
 
   @Get(':id')
   findById(@Param('id') id: string) {
-    return users.find(u => u.id === id) || null
+    return this.usersService.findOne(id)
   }
 
   @Post()
   @HttpCode(201)
   createUser(@Body() createUserDto: CreateUserDTO) {
     this.logger.log(createUserDto, 'Creating user');
-    users.push(createUserDto)
+    this.usersService.create(createUserDto)
   }
 }
